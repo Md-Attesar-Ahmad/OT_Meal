@@ -110,10 +110,17 @@ selected_people = st.multiselect(
 )
 
 if st.button("Submit OT Claim"):
+    name=""
     for person in selected_people:
         ws.cell(row=row_index, column=names[person]).value = "OT"
     wb.save(FILE_PATH)
     st.success(f"OT Tracker Updated!!")
+    for k in selected_people:
+        if k==selected_people[0]:
+            name=k
+        else:
+            name=name+"; "+k
+    st.info(f"You can Copy names : {name}")
     wb.close()
     st.stop()
 

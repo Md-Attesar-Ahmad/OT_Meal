@@ -5,7 +5,7 @@ from datetime import date, datetime
 FILE_PATH = "OT_Tracker.xlsx"
 SHEET_NAME = "OT"
 
-st.title("OT Meal Tracker")
+st.title("OT Meal Tracker___")
 
 selected_date = st.date_input("Select OT Date", value=date.today())
 
@@ -94,3 +94,4 @@ if st.button("Submit OT Claim"):
         st.stop()
 
 wb.close()
+

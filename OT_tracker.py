@@ -1,13 +1,20 @@
 import streamlit as st
 from openpyxl import load_workbook
 from datetime import date, datetime
+import math
 
 FILE_PATH = "OT_Tracker.xlsx"
 SHEET_NAME = "OT"
 
-st.title("OT Meal Tracker___")
+st.title("OT Meal Tracker")
 
 selected_date = st.date_input("Select OT Date", value=date.today())
+
+# Add bill amount input
+bill_amount = st.number_input(
+    "Enter Bill Amount (₹)",
+    step=50
+)
 
 def _to_date(x):
     """Fast conversion to python date (handles datetime/date/strings)."""
@@ -40,13 +47,15 @@ def get_name_to_col(file_path: str, sheet_name: str):
     wb.close()
     return mapping
 
+# Calculate required number of people
+required_people = math.ceil(bill_amount / 750) if bill_amount > 0 else 0
+
 # Load workbook (normal mode because we will write later)
 wb = load_workbook(FILE_PATH)
 ws = wb[SHEET_NAME]
 
 # --- Find row for selected date (same logic, faster loop) ---
 row_index = None
-
 # Iterate only the date column values (A2:A...)
 # values_only=True avoids cell object overhead
 for idx, (cell_val,) in enumerate(
@@ -79,19 +88,33 @@ if not available_people:
     wb.close()
     st.stop()
 
-selected_people = st.multiselect("Select people", available_people)
+# Show required people count and allow selection only if bill amount is entered
+if bill_amount <= 0:
+    st.info("Please enter a bill amount to continue")
+    wb.close()
+    st.stop()
+
+# Display the calculated requirement
+st.info(f"Bill Amount: ₹{bill_amount:.0f} → You must select **{required_people}** people")
+
+# Check if enough people are available
+if required_people > len(available_people):
+    st.info(f"Not enough available people! Required: {required_people}, Available: {len(available_people)}")
+    # wb.close()
+    # st.stop()
+
+selected_people = st.multiselect(
+    f"Select {required_people} people", 
+    available_people,
+    max_selections=required_people
+)
 
 if st.button("Submit OT Claim"):
-    if not selected_people:
-        st.warning("Please select at least one person")
-    else:
-        for person in selected_people:
-            ws.cell(row=row_index, column=names[person]).value = "OT"
-
-        wb.save(FILE_PATH)
-        st.success("OT Tracker Updated")
-        wb.close()
-        st.stop()
+    for person in selected_people:
+        ws.cell(row=row_index, column=names[person]).value = "OT"
+    wb.save(FILE_PATH)
+    st.success(f"OT Tracker Updated!!")
+    wb.close()
+    st.stop()
 
 wb.close()
-
